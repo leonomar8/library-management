@@ -69,6 +69,98 @@ It is structured using the **MVC (Model-View-Controller)** architecture and inco
 
 ---
 
+## 🚀 Deployment
+Add your specific AWS Elastic Beanstalk or Docker deployment steps here.
+
+Example (to be completed by you):
+```bash
+# Build Docker image
+...
+
+# Push to ECR
+...
+
+# Deploy to Elastic Beanstalk
+...
+```
+
+---
+
+## 🔐 .ENV Variables
+
+```ini
+DATABASE_URL=mysql+mysqlconnector://root:your_password@your_host:3306/your_db_name
+```
+
+---
+
+## ✅ How to Run Locally
+```bash
+# Clone the repository
+git clone https://github.com/your-username/library-management.git
+cd library-management
+
+# Create and activate virtual environment (optional)
+python -m venv venv
+source venv/bin/activate  # For Linux/Mac
+venv\Scripts\activate     # For Windows
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the server
+uvicorn app.main:app --reload
+```
+
+## 🧪 Sample Endpoints
+
+| Method | Endpoint                                 | Description         |
+|--------|------------------------------------------|---------------------|
+| POST   | `/users/`                                | Create a new user   |
+| GET    | `/users/`                                | List all users      |
+| POST   | `/books/`                                | Create a new book   |
+| GET    | `/books/`                                | List all books      |
+| POST   | `/books/{book_id}/borrow/{user_id}`      | Borrow a book       |
+| POST   | `/books/{book_id}/return/{user_id}`      | Return a book       |
+
+---
+
+## CURLs
+
+#### POST Create a new User
+```bash
+curl --location 'http://<URL>:<port>/users/' \
+--header 'Content-Type: application/json' \
+--data '{"name": "Alice"}'
+```
+
+#### GET List all User
+```bash GET List all User
+curl --location 'http://<URL>:<port>/users/'
+```
+
+#### POST Create a new Book
+```bash POST Create a new Book
+curl --location 'http://<URL>:<port>/books/' \
+--header 'Content-Type: application/json' \
+--data '{"title": "1984", "author": "George Orwell"}'
+```
+
+#### GET List all Books
+```bash GET List all Books
+curl --location 'http://<URL>:<port>/books/'
+```
+
+#### POST Borrow Book
+```bash
+curl --location --request POST 'http://<URL>:<port>/books/1/borrow/2'
+```
+
+#### POST Return Book
+```bash
+curl --location --request POST 'http://<URL>:<port>/books/1/return/2'
+```
+
 ## 📁 Project Structure
 
 ```bash
@@ -90,4 +182,5 @@ your_project/
 ├── requirements.txt         # Python dependencies
 ├── .gitignore               # Git exclusions
 └── README.md                # This file
+
 
