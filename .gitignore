@@ -4,3 +4,9 @@ __pycache__/
 
 # Virtual environment
 venv/
+
+# zipped code for EBS and others
+library-management.zip
+.env                        
+docker-compose.yml
+
