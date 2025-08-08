@@ -7,6 +7,6 @@ venv/
 
 # zipped code for EBS and others
 library-management.zip
-.env                        
+.env
 docker-compose.yml
 
