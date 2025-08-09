@@ -68,7 +68,7 @@ It is structured using the **MVC (Model-View-Controller)** architecture and inco
 
 ## 5. Deployment
 
-### Run Locally
+### 5.a. Run Locally
 ```bash
 # Clone the repository
 git clone https://github.com/your-username/library-management.git
@@ -118,7 +118,7 @@ volumes:
   mysql_data:
 ```
   
-### Elastic Beanstalk (GUI) + RDS
+### 5.b. Elastic Beanstalk (GUI) + RDS
 
 Prepare the project to deploy in EBS using the AWS Console
 ```init
@@ -187,10 +187,10 @@ Steps to config EBS by Console
 		- Environment properties:
 			DATABASE_URL: mysql+mysqlconnector://root:password@<DB_URL>:3306/mydb
 
-# Note forStep 2: EC2 connects to RDS via network access—no IAM permissions needed. However, a direct connection to RDS requires "AmazonRDSFullAccess" IAM permissions.
+# Note for Step 2: EC2 connects to RDS via network access—no IAM permissions needed. However, a direct connection to RDS requires "AmazonRDSFullAccess" IAM permissions.
 ```
 
-### Elastic Beanstalk (CLI) + RDS
+### 5.c. Elastic Beanstalk (CLI) + RDS
 
 Deploy project programmatically in EBS with AWS CLI and EBS CLI
 ```bash
@@ -235,6 +235,7 @@ Deploy project programmatically in EBS with AWS CLI and EBS CLI
 | POST   | `/books/{book_id}/borrow/{user_id}`      | Borrow a book       |
 | POST   | `/books/{book_id}/return/{user_id}`      | Return a book       |
 
+### CURLs
 Replace <URL>:<port> with your server address (e.g., http://localhost:8000)
 ```bash
 # Create a new user
@@ -257,7 +258,7 @@ curl -X POST <URL>:<port>/books/1/return/2
 ```
 
 ## 7. Project Structure
-
+Procfile Note: Elastic Beanstalk expects a WSGI-compatible interface, but FastAPI is ASGI-based. To bridge this, use Gunicorn with the Uvicorn worker to serve FastAPI properly.
 ```bash
 library-management/
 │
@@ -280,8 +281,6 @@ library-management/
 ├── Procfile*                # EBS startup config: runs gunicorn with uvicorn for ASGI support
 ├── README.md
 └── requirements.txt         # Python dependencies
-
-Procfile Note: Elastic Beanstalk expects a WSGI-compatible interface, but FastAPI is ASGI-based. To bridge this, use Gunicorn with the Uvicorn worker to serve FastAPI properly.
 ```
 
 ## 8. Annex
