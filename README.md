@@ -90,13 +90,13 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-#### .ENV
+.ENV
 
 ```ini
 DATABASE_URL=mysql+mysqlconnector://root:your_password@your_host:3306/your_db_name
 ```
 
-#### MySQL Docker Compose Script
+MySQL Docker Compose Script
 ```ini
 version: '3.8'
 services:
@@ -121,7 +121,7 @@ volumes:
 ### Elastic Beanstalk (GUI) + RDS
 
 Prepare the project to deploy in EBS using the AWS Console
-```bash
+```init
 # Files added for EBS deployment:
   - application.py: The spected entry pont for EBS is application.py. No need to change main.py
   - Procfile: EBS expects a WSGI-compatible interface, but FastAPI is ASGI-based. To bridge this, use Gunicorn with the Uvicorn worker to serve FastAPI properly.
@@ -135,21 +135,94 @@ Prepare the project to deploy in EBS using the AWS Console
 # Spin up an RDS DB with these config:
   - Be aware of region, VPC and AZ, you'll use the same for EBS
   - Private Access
-  - SG with 3306 port open
+  - SG with port 3306 open
   - Relevant values to connect EBS with RDS:
     - Master username: root
     - Master password: ******8
     - Initial database name: mydb
-  
+  - Once RDS is active, copy the connection endpoint
 
 # EBS doesn't use .env file, instead you add env variables by console
 ```
 
+Steps to config EBS by Console
+```init
+# AWS > Elastic Beanstalk > Create Application
+	- Step 1: Configure environment:
+		- Environment tier: Web server environment
+		- Application name: lib-mgmt
+		- Environment name: lib-mgmt-dev
+		- Platform: Python
+		- Platform branch: Python 3.13
+		- Platform version: 4.7.0 (Recommended)
+		- Version label: v1
+		- Upload application: upload your ZIP file
+		- Configuration presets: Single instance
+	- Step 2: Configure service access
+		- Service role: aws-elasticbeanstalk-service-role
+			# This role is created with this parameters in AWS > IAM > Roles > Create Role:
+			- Trusted entity type: AWS Service
+			- Service or use case: Elastic Beanstalk
+			- Use case: Elastic Beanstalk - Environment
+			- Add Permissions:
+				- AWSElasticBeanstalkManagedUpdatesCustomerRolePolicy
+				- AWSElasticBeanstalkEnhancedHealth
+			- Role name: aws-elasticbeanstalk-service-role
+		- EC2 instance profile: aws-elasticbeanstalk-ec2-role
+			# This role is created with this parameters in AWS > IAM > Roles > Create Role:
+			- Trusted entity type: AWS Service
+			- Service or use case: Elastic Beanstalk
+			- Use case: Elastic Beanstalk - Compute
+			- Add Permissions:
+				- AWSElasticBeanstalkMulticontainerDocker
+				- AWSElasticBeanstalkWebTier
+				- AWSElasticBeanstalkWorkerTier
+		 	- Role name: aws-elasticbeanstalk-ec2-role
+	- Step 3: Set up networking, database
+		- VPC: Default
+		- subnets: us-east-1a
+	- Step 4: Configure instance traffic and scaling
+		- EC2 security groups: SG with port 80 open
+	- Step 5: Configure updates, monitoring, and logging
+		- Environment properties:
+			DATABASE_URL: mysql+mysqlconnector://root:password@<DB_URL>:3306/mydb
+
+# Note forStep 2: EC2 connects to RDS via network access—no IAM permissions needed. However, a direct connection to RDS requires "AmazonRDSFullAccess" IAM permissions.
+```
+
 ### Elastic Beanstalk (CLI) + RDS
 
+Deploy project programmatically in EBS with AWS CLI and EBS CLI
+```bash
+# Check that AWS CLI and EBS CLI are installed
+	$ aws --version
+	$ eb --version
 
+# Enter AWS credentials
+	$ aws configure					
+		AWS Access Key
+		Secret Key
+		Region (us-east-1)
+	$ aws sts get-caller-identity		# check credentials are ok
+	
+# Clone project repo
+	$ git clone https://github.com/username/library-management.git
+	$ cd library-management
+	$ python3 -m venv venv					# Python venv
+	$ source venv/bin/activate				# Python venv
 
+# Initialize EB Project
+	$ eb init -p python-3.13 lib-mgmt --region us-east-1			# EB App name "lib-mgmt"
+	$ eb create lib-mgmt-dev --single								# creates an environment
+	$ eb use lib-mgmt-dev											# links the environment "lib-mgmt-dev" with the app "lib-mgmt"
+	$ eb list
+	
+# Set EBS environment variables - Wait until environment is created
+	$ eb setenv DATABASE_URL=mysql+mysqlconnector://root:password@<db_endpoint>:3306/mydb
 
+# Deploy EB Project
+	$ eb deploy
+```
 
 ## 6. Endpoints and CURLs
 
@@ -209,3 +282,33 @@ library-management/
 └── requirements.txt         # Python dependencies
 
 Procfile Note: Elastic Beanstalk expects a WSGI-compatible interface, but FastAPI is ASGI-based. To bridge this, use Gunicorn with the Uvicorn worker to serve FastAPI properly.
+```
+
+## 8. Annex
+
+Install AWS CLI and EBS CLI
+```bash
+# Install libraries and dependencies
+	$ sudo apt update
+	$ sudo apt install python3-pip python3-venv git unzip -y
+
+# Install aws cli global
+	$ curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+	$ unzip awscliv2.zip
+	$ sudo ./aws/install
+    $ aws --version
+
+# Install ebs cli global with pipx
+	$ sudo apt install pipx
+	$ pipx ensurepath
+	$ pipx install awsebcli
+	$ echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+	$ source ~/.bashrc
+	$ eb --version
+```
+
+Extra Commands
+```bash
+$ docker exec -it <container_name> mysql -u root -p		# Access container db (general command)
+$ docker exec -it mysql_fastapi mysql -u root -p		# Access container db (example)
+```
