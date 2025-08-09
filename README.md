@@ -286,20 +286,20 @@ library-management/
 The following improvements are being considered for future versions of the project:
 
 **Development**
-	- Add book categories and genres
- 	- Reservation system for unavailable books and notification when available
-  	- Fine payment tracking
-   	- Automatic overdue alerts
-	- Multiple copies of the same title
- 	- Unit tests and integration tests
+- Add book categories and genres
+- Reservation system for unavailable books and notification when available
+- Fine payment tracking
+- Automatic overdue alerts
+- Multiple copies of the same title
+- Unit tests and integration tests
 
 **Cloud Engineering**
-	- GitHub and Elastic Beanstalk integration.
-	- HTTPS support.
- 	- Domain name with Route 53. 
- 	- Dockerized application.
-	- High Availability through multi-AZ deployment and Auto Scaling Groups for automatic recovery.
- 	- Performance via load balancing and dynamic scaling based on demand.
+- GitHub and Elastic Beanstalk integration.
+- HTTPS support.
+- Domain name with Route 53. 
+- Dockerized application.
+- High Availability through multi-AZ deployment and Auto Scaling Groups for automatic recovery.
+- Performance via load balancing and dynamic scaling based on demand.
 
 ## 9. Annex
 
