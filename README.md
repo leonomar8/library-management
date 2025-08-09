@@ -1,13 +1,12 @@
 # Library Management System (Backend API)
-A Python FastAPI-based backend service for managing a library's book lending system. It allow to add books to the library, users to register, borrow, and return books, while enforcing borrowing limits and calculating overdue fines.
-
+A Python FastAPI-based backend service for managing a library's book lending system. It allows users to register, add books, borrow and return them, with borrowing limits and overdue fines enforced.
 
 ![Alt text](diagram.png)
 
 
 
 ## 1. Objective
-To build a robust and scalable backend service that demonstrates **Cloud Engineering** and **OOP Software Development** skills using modern technologies and best practices.
+This project aims to build a robust and scalable backend service that highlights Cloud Engineering and Object-Oriented Programming skills, utilizing modern technologies and adhering to best practices.
 
 ## 2. Project Description
 This project simulates a digital library system where users can:
@@ -283,7 +282,26 @@ library-management/
 └── requirements.txt         # Python dependencies
 ```
 
-## 8. Annex
+## 8. Upcoming Features
+The following improvements are being considered for future versions of the project:
+
+**Development**
+	- Add book categories and genres
+ 	- Reservation system for unavailable books and notification when available
+  	- Fine payment tracking
+   	- Automatic overdue alerts
+	- Multiple copies of the same title
+ 	- Unit tests and integration tests
+
+**Cloud Engineering**
+	- GitHub and Elastic Beanstalk integration.
+	- HTTPS support.
+ 	- Domain name with Route 53. 
+ 	- Dockerized application.
+	- High Availability through multi-AZ deployment and Auto Scaling Groups for automatic recovery.
+ 	- Performance via load balancing and dynamic scaling based on demand.
+
+## 9. Annex
 
 Install AWS CLI and EBS CLI
 ```bash
