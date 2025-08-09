@@ -8,5 +8,8 @@ venv/
 # zipped code for EBS and others
 library-management.zip
 .env
-docker-compose.yml
 
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
