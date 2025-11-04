@@ -56,7 +56,7 @@ It is structured using the **MVC (Model-View-Controller)** architecture and inco
 
 ### 🧑‍💼 DevOps / Cloud Engineering
 - Dockerized DB with `docker-compose` for local testing
-- `.env` for Secure Configs
+- `.env` for Environment Variables
 - Deployment-ready for AWS:
   - Elastic Beanstalk (EB)
   - Configure Procfile and application.py to prepare the project for EB deployment.
