@@ -78,6 +78,8 @@ python3 -m venv venv		# python -m venv venv (optional)
 source venv/bin/activate  	# For Linux/Mac
 venv\Scripts\activate     	# For Windows
 
+# Edit DB password in docker-compose file
+
 # Run a MySQL docker container
 docker-compose up -d
 
