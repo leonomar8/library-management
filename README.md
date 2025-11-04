@@ -233,7 +233,7 @@ curl -X POST <URL>:<port>/books/1/return/2
 ```
 
 ## 7. Project Structure
-Procfile Note: Elastic Beanstalk expects a WSGI-compatible interface, but FastAPI is ASGI-based. To bridge this, use Gunicorn with the Uvicorn worker to serve FastAPI properly.
+
 ```bash
 library-management/
 │
