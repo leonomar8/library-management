@@ -86,14 +86,11 @@ docker-compose up -d
 # Install dependencies
 pip install -r requirements.txt
 
+# Set the DB password and host URL in the .env file
+DATABASE_URL=mysql+mysqlconnector://root:db_password@localhost:3306/mydb
+
 # Run the server
 uvicorn app.main:app --reload
-```
-
-.ENV
-
-```ini
-DATABASE_URL=mysql+mysqlconnector://root:your_password@your_host:3306/your_db_name
 ```
   
 ### 5.b. Elastic Beanstalk (GUI) + RDS
