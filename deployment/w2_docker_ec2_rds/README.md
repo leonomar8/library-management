@@ -1,5 +1,4 @@
 # Week 2: Docker Container in AWS EC2 and RDS Database
-## 0. Brief description
 The Library Management System is a backend API built with FastAPI that provides endpoints to manage books, users, and borrowing transactions. The system supports full CRUD operations and uses a MySQL database for persistent data storage. This module focuses on containerizing the application using Docker and deploying it in the AWS Cloud with RDS (for the database) and EC2 (for the application container).
 
 ![Alt text](diagram.png)
@@ -26,7 +25,7 @@ The deployment uses a hybrid approach with local container testing and cloud hos
 - **Security Groups** – Network access control
 
 
-## 4. Cloud Skills Demonstrated
+## 4. Cloud Skills Covered
 
 - Designed and deployed a containerized FastAPI app from local to AWS.
 - Built and managed Docker images via Docker Hub.
