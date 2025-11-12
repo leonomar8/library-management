@@ -13,6 +13,12 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    networks:
+      - backend_net
 
 volumes:
   mysql_data:
+
+networks:
+  backend_net:
+    external: true

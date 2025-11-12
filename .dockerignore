@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.git
+application.py
+diagram.png
+docker-compose.yml
+Procfile
+venv
