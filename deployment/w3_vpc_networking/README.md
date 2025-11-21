@@ -16,6 +16,7 @@ Build a secure AWS VPC network with public and private subnets, NAT gateways, an
 - Enabled DNS hostnames for resource accessibility.
 - Designed a high-availability, segmented network for security and scalability.
 
+
 ## 3. Table of VPC Network Elements Created
 
 | Element | Name | CIDR / AZ | Purpose |
@@ -35,7 +36,7 @@ Build a secure AWS VPC network with public and private subnets, NAT gateways, an
 | Private Route Table AZ2 | Private Route Table AZ2 | - | Routes private subnets in AZ2 through NAT Gateway AZ2 |
 
 
-## 5. AWS VPC Console Setup Guide
+## 4. AWS VPC Console Setup Guide
 
 Follow this guide to create a fully functional VPC network in AWS using the console.
 
@@ -107,3 +108,14 @@ Follow this guide to create a fully functional VPC network in AWS using the cons
 - Refer to **diagram.png** for the network layout including VPC, subnets, route tables, and NAT gateways.
 
 ```
+
+## 5. Delete the VPC
+
+Follow these order to safely remove the VPC and all associated resources:
+
+- Delete NAT Gateways
+- Delete the VPC which will delete:
+    - Internet Gateway
+    - Subnets
+    - Route Tables
+- Elastic IPs
