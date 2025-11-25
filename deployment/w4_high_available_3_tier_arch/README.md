@@ -1,93 +1,301 @@
-# Week 3: High Available 3 Tier Architecture
-The Library Management System is a backend API built with FastAPI that provides endpoints to manage books, users, and borrowing transactions. The system supports full CRUD operations and uses a MySQL database for persistent data storage. This module focuses on containerizing the application using Docker and deploying it in the AWS Cloud with RDS (for the database) and EC2 (for the application container).
+# Week 4: High Available 3 Tier Architecture
+This module focuses on designing and deploying a **highly available 3-Tier Architecture** on AWS for the Library Management System — a backend API developed with FastAPI that manages books, users, and borrowing operations using full CRUD functionality.
+
+The project evolves from local container testing to a **production-grade cloud deployment** using:
+
+* **Docker containers** for packaging the application
+* **Amazon EC2 Auto Scaling Groups** for the Web and App tiers
+* **Application Load Balancers (ALB)** for traffic distribution
+* **Amazon RDS (MySQL)** in **Multi-AZ** mode for fault-tolerant data storage
+
+This module demonstrates how to build an HA infrastructure capable of withstanding AZ failures while maintaining service continuity.
+
+---
 
 ![Alt text](diagram.png)
 
 
 
+---
+
 ## 1. Objective
-Design a cloud-based deployment strategy using Docker Container, Docker Hub, AWS EC2 and RDS Database.
+Design and deploy a **Highly Available 3-Tier Architecture** using Dockerized FastAPI services, AWS load balancers, Auto Scaling Groups, and an RDS Multi-AZ database.
+
+The objective is to provide a **scalable, resilient, and production-ready cloud environment** following best practices for networking, IAM, compute, and database operations.
+
+---
+Here are **simplified and cleaner versions** of **Sections 2, 3, and 4**, keeping them technical but more concise.
+
+---
 
 ## 2. Deployment Strategy
-The deployment uses a hybrid approach with local container testing and cloud hosting on AWS.
- - **Local**: The FastAPI app and MySQL database run in containers using Docker for production-like testing. The verified image is then pushed to Docker Hub.
- - **Cloud**: An EC2 instance hosts the app container connected to an RDS MySQL database. Security Groups manage access — web-sg for API traffic (port 8000) and db-sg for database access (port 3306).
- - **Validation**: Connectivity is tested via FastAPI’s /docs and CURL commands.
+The deployment follows a local-to-cloud workflow:
+
+### **Local Environment**
+* The FastAPI application runs in a Docker container.
+* MySQL runs via docker-compose for local testing.
+* After validation, the image is pushed to Docker Hub.
+
+### **AWS Deployment**
+* **Web Tier:** EC2 instances in an Auto Scaling Group behind a public ALB. Apache acts as a reverse proxy to the App Tier.
+* **App Tier:** EC2 instances running the FastAPI container, behind an internal ALB.
+* **Data Tier:** Amazon RDS MySQL in Multi-AZ for high availability.
+
+### **Networking & Security**
+* Security Groups restrict communication between tiers (Web → App → RDS).
+* IAM roles allow the Web Tier to fetch the frontend file from S3.
+* User Data scripts automate the installation and container startup on EC2.
+
+---
 
 ## 3. Tech Stack
 
-- **FastAPI** – Backend API framework
-- **MySQL (RDS)** – Managed relational database
-- **Docker / docker-compose** – Containerization and local orchestration
-- **Docker Hub** - Docker Registry
-- **AWS EC2** – Cloud hosting for the app container
-- **Git** – Version control
-- **Security Groups** – Network access control
+### **Application & Database**
+* FastAPI (backend)
+* MySQL (Amazon RDS Multi-AZ)
 
+### **Containerization & Registry**
+* Docker / docker-compose
+* Docker Hub
+
+### **AWS Services**
+* EC2 + Auto Scaling Groups
+* Application Load Balancers (public and internal)
+* Amazon S3
+* Security Groups
+* IAM Roles
+
+### **Supporting Tools**
+* Git
+* Bash User Data scripts
+
+---
 
 ## 4. Cloud Skills Covered
 
-- Designed and deployed a containerized FastAPI app from local to AWS.
-- Built and managed Docker images via Docker Hub.
-- Used environment variables for secure configuration on EC2.
-- Configured AWS RDS (MySQL) and linked it to the app container.
-- Automated EC2 setup with User Data scripts.
-- Isolate App <–> Database communication using Security Groups.
+* Designed and deployed a **3-Tier Highly Available Architecture** on AWS.
+* Built Docker images and deployed containers on EC2 using User Data.
+* Configured a **public Web ALB** and **internal App ALB** for traffic distribution.
+* Set up **RDS MySQL Multi-AZ** for resilient database operations.
+* Implemented **Auto Scaling Groups** for automatic recovery and scaling.
+* Applied Security Groups to control traffic between Web, App, and Data tiers.
+* Used IAM roles for secure S3 access from EC2 instances.
 
-## 5. Deployment
+---
 
-### 5.a. EC2/Docker + ALB + ASG + RDS (AWS Console)
+## 5. Deployment $ Configuration Steps (AWS Console)
 
-Create 2 Security Groups in: AWS Console > EC2 > Security Groups > Create Security Group
+5.1. Create a New VPC
+- Create **Dev VPC** as explained in Week 3 project.
+
+5.2. Security Groups
 ```init
-    - web-sg
-    - app-sg
+### Security Group Table
+| Name        | Ports  | Origin        |
+|-------------|--------|---------------|
+| alb-web-sg  | 80,443 | 0.0.0.0/0     |
+| asg-web-sg  | 80,443 | alb-web-sg    |
+| alb-app-sg  | 80     | asg-web-sg    |
+| asg-app-sg  | 8000   | alb-app-sg    |
+| data-sg     | 3306   | asg-app-sg    |
 
-    
-    
-    - web-sg
-        - Security group name: web-sg
-        - Description: web-sg
-        - Add Inbound Rule: TCP/8000/source(0.0.0.0/0)
-    - db-sg
-        - Security group name: db-sg
-        - Description: db-sg
-        - Add Inbound Rule: TCP/3306/source(web-sg)
+### Configuration on AWS Console
+- VPC > Security Groups > Create Security Group  
+- SG name:          alb-web-sg 
+- Description:      alb-web-sg
+- VPC:              Dev VPC  
+- Inbound Rules:  
+  - HTTP from anywhere  
+  - HTTPS from anywhere
+
+Note: Repeat these steps for the other SG
 ```
 
-Spin up an RDS database: AWS Console > RDS > Create database
+5.3. RDS Subnet Group
 ```init
-    - Choose a database creation method: Standard create
-    - Engine: MySQL
-    - Engine version: MySQL 8.0.42
-    - Availability and durability: Multi-AZ
-    - DB instance identifier: db-lib-mgmt
-    - Master username: root
-    - Master password: ******8
-    - DB instance class: db.t3.micro
-    - Storage: gp2/20GB
-    - VPC: Default
-    - Public access: No
-    - VPC security groups: data-sg
-    - DB subnet group: default (all subnets)
-    - Initial database name: mydb
-    - Enable automated backup: Checked
-    - Once RDS is active, copy the connection endpoint
+- RDS > Subnet Group > Create DB subnet group  
+  - Name:           db-subnet-group-multi-az
+  - Description:    db-subnet-group-multi-az
+  - VPC:            Dev VPC
+  - AZs:            us-east-1a, us-east-1b
+  - Subnets:  
+    - Private Data Subnet AZ1  
+    - Private Data Subnet AZ2  
 ```
 
-Spin up an EC2 Server with Docker inside: AWS Console > EC2 > Launch an instance
+5.4. RDS Multi-AZ Deployment
 ```init
-    - Name: backend-api
-    - OS: Amazon Linux 2023
-    - Instance type: t3.micro
-    - Key pair: Yes
-    - VPC: Default
-    - Security Group: web-sg
-    - Availability Zone: us-east-1a           # Same AZ as RDS
-    - Edit the ec2_user_data script: RDS username, password and endpoint
-    - User Data: Use the edited script
+Spin up an RDS instance with:
 
-# Test connectivity with the CURLs using Endpoints and CURLs (Section 6), browser or <ec2_ip_server>:8000/docs
+- RDS > Databases > Create database  
+  - Database creation method:   Full configuration
+  - Engine type:                MySQL
+  - Engine version:             Default
+  - Templates:                  Dev/Test
+  - Availability & durability:  Multi-AZ DB instance deployment (2 instances)
+  - DB instance identifier:     db-lib-mgmt
+  - Master username:            root
+  - Master password:            ******8
+  - DB instance class:          db.t3.micro
+  - Storage type:               gp2
+  - Allocate storage:           20 GiB
+  - VPC:                        Dev VPC
+  - DB subnet group:            db-subnet-group-multi-az
+  - Public access:              No
+  - Security group:             data-sg
+  - Initial database name:      mydb
+
+- Once RDS is active → copy the connection `endpoint`.
+```
+
+5.5. S3 Bucket
+```init
+- S3 > Buckets > Create bucket  
+  - Bucket type:    General
+  - Bucket name:    test-multi-az-omar
+  - Keep default settings (Private)
+
+- After creation, upload the frontend file `index.html`.
+```
+
+5.6. IAM Role
+```init
+- IAM > Roles > Create role  
+  - Trusted entity:     AWS service
+  - Use case:           EC2
+  - Select policy:      S3FullAccess
+
+Note: IAM role required for Web EC2 instances to download `index.html` from S3.
+```
+
+5.7. Application Load Balancers & Target Groups
+```init
+### Web Target Group
+- EC2 > Target Groups > Create target group  
+  - Target type:            Instances
+  - Name:                   web-tg
+  - Protocol:               HTTP
+  - Port:                   80
+  - VPC:                    Dev VPC
+  - Health check protocol:  HTTP
+  - Health check path:      "/"
+  - Next > Next > Create
+
+---
+
+### Web Application Load Balancer
+- EC2 > Load Balancers > Create load balancer  
+  - Name:               web-alb
+  - Scheme:             Internet-facing
+  - AZs and Subnets:  
+    - us-east-1a: Public Web Subnet AZ1  
+    - us-east-1b: Public Web Subnet AZ2  
+  - Security Group: **alb-web-sg
+  - Listener:           HTTP
+  - Port:               80
+  - Target group:       web-tg
+
+---
+
+### App Target Group
+- EC2 > Target Groups > Create target group  
+  - Target type:            Instances
+  - Name:                   app-tg
+  - Protocol:               HTTP
+  - Port:                   8000
+  - VPC:                    Dev VPC
+  - Health check protocol:  HTTP
+  - Health check path:      "/users/"  
+  - Next > Next > Create
+
+---
+
+### App Application Load Balancer
+- EC2 > Load Balancers > Create load balancer  
+  - Name:               app-alb
+  - Scheme:             Internal
+  - AZs and Subnets:  
+    - us-east-1a: Private App Subnet AZ1  
+    - us-east-1b: Private App Subnet AZ2  
+  - Security Group:     alb-app-sg
+  - Listener:           HTTP
+  - Port:               80
+  - Target group:       app-tg
+```
+
+5.8. Auto Scaling Groups & Launch Templates
+```init
+### Web Launch Template
+- EC2 > Launch templates > Create launch template  
+  - Name:                   web-launch-template
+  - Description:            web-launch-template
+  - Auto Scaling guidance:  Check
+  - Image:                  Amazon Linux 2023 — 64-bit
+  - Instance type:          t2.micro
+  - Key pair:               select key (myec2key)
+  - Security group:         asg-web-sg
+  - IAM instance profile:   ec2-s3-access
+  - User data: paste "web_user_data script" with correct S3 bucket & App ALB DNS name
+
+> Note: The `web_user_data` script installs Apache in reverse proxy mode to avoid CORS issues.
+
+---
+
+### App Launch Template
+- EC2 > Launch templates > Create launch template  
+  - Name:                   app-launch-template
+  - Description:            app-launch-template  
+  - Auto Scaling guidance:  Check
+  - Image:                  Amazon Linux 2023 — 64-bit
+  - Instance type:          t2.micro
+  - Key pair:               select key (myec2key)
+  - Security group:         asg-app-sg
+  - User data: paste "app_user_data script" with updated DB username, password, and RDS endpoint
+
+---
+
+### Web Auto Scaling Group
+- EC2 > Auto Scaling groups > Create Auto Scaling group  
+  - Name:                       web-asg
+  - Launch template:            web-launch-template
+  - VPC:                        Dev VPC
+  - Subnets:                    Public Web Subnet AZ1, Public Web Subnet AZ2
+  - Attach to load balancer:    web-tg
+  - Enable ELB health checks:   Check
+  - Desired/Min/Max:            2 / 1 / 3
+  - Automatic scaling:          Target tracking
+    - Metric:                   Average CPU Utilization  
+    - Target value:             50
+  - Monitoring:                 Enable group metrics (CloudWatch)
+
+---
+
+### App Auto Scaling Group
+- EC2 > Auto Scaling groups > Create Auto Scaling group  
+  - Name:                       app-asg
+  - Launch template:            app-launch-template
+  - VPC:                        Dev VPC
+  - Subnets:                    Private App Subnet AZ1, Private App Subnet AZ2
+  - Attach to load balancer:    app-tg
+  - Enable ELB health checks:   Check
+  - Desired/Min/Max:            2 / 1 / 3
+  - Automatic scaling:          Target tracking
+    - Metric:                   Average CPU Utilization
+    - Target value:             50
+  - Monitoring:                 Enable group metrics (CloudWatch)
+```
+
+5.9. Clean Up Resources
+```init
+### Follow this order to erase resources
+- Auto Scaling Groups & Launch Templates  
+- Load Balancers & Target Groups  
+- Security Groups  
+- NAT Gateways  
+- VPC  
+- Elastic IPs  
+- IAM Role  
+- S3 Bucket  
 ```
 
 ## 6. Endpoints and CURLs
@@ -102,7 +310,7 @@ Spin up an EC2 Server with Docker inside: AWS Console > EC2 > Launch an instance
 | POST   | `/books/{book_id}/return/{user_id}`      | Return a book       |
 
 ### CURLs
-Replace <URL>:<port> with your server address (e.g., http://localhost:8000)
+Replace <URL>:<port> with your server address, in this case with the DNS name of the Web Aplication Load Balancer (e.g., http://internal-app-alb-1945760550.us-east-1.elb.amazonaws.com). You can include or not the port 80.
 ```bash
 # Create a new user
 curl -X POST <URL>:<port>/users/ -H "Content-Type: application/json" -d '{"name": "Alice"}'
@@ -129,10 +337,13 @@ curl -X POST <URL>:<port>/books/1/return/2
 library-management/
 ├── app                         # FastAPI application code (routes, models, schemas, etc.)
 ├── deployment                  # Deployment-related files and scripts
-│   └── w2_docker_ec2_rds       # Week 2: Docker + EC2 + RDS deployment setup
-│       ├── diagram.png         # Architecture diagram for cloud deployment
-│       ├── ec2_user_data.sh    # User Data script to configure EC2 and run Docker container
-│       └── README.md           # Deployment instructions and notes
+│   └── w2_docker_ec2_rds       
+│   └── w3_vpc_networking
+    └── w4_high_available_3_tier_arch   # Week 4: High Available 3-Tier-Architecture
+        ├── app_user_data.sh            # User Data script for app launch template
+        ├── diagram.png                 # Architecture diagram for cloud deployment
+        ├── README.md                   # Deployment instructions and notes    
+        └── web_user_data.sh            # User Data script for web launch template
 ├── diagram.png                 # High-level project architecture diagram
 ├── docker-compose.yml          # To Construct the DB locally for dev tests
 ├── Dockerfile                  # Instructions to build the FastAPI app container
