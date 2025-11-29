@@ -1,4 +1,4 @@
-# Week 4: High Available 3 Tier Architecture
+# Week 5: Cloud Formation and 3 Tier Architecture
 This module focuses on designing and deploying a **highly available 3-Tier Architecture** on AWS for the Library Management System — a backend API developed with FastAPI that manages books, users, and borrowing operations using full CRUD functionality.
 
 The project evolves from local container testing to a **production-grade cloud deployment** using:
@@ -86,16 +86,14 @@ The deployment follows a local-to-cloud workflow:
 ## 5. Deployment $ Configuration Steps (AWS Console)
 
 5.1. Create a New VPC
-- Create **Dev VPC** as explained in Week 3 project.
+- Create **Dev VPC** as explained in Week 3 project "VPC Networking".
 
 5.2. Security Groups
 ```init
 ### Security Group Table
 | Name        | Ports  | Origin        |
 |-------------|--------|---------------|
-| alb-web-sg  | 80,443 | 0.0.0.0/0     |
-| asg-web-sg  | 80,443 | alb-web-sg    |
-| alb-app-sg  | 80     | asg-web-sg    |
+| alb-app-sg  | 80,443 | 0.0.0.0/0     |
 | asg-app-sg  | 8000   | alb-app-sg    |
 | data-sg     | 3306   | asg-app-sg    |
 
@@ -148,55 +146,8 @@ Spin up an RDS instance with:
 - Once RDS is active → copy the connection `endpoint`.
 ```
 
-5.5. S3 Bucket
+5.5. Application Load Balancers & Target Groups
 ```init
-- S3 > Buckets > Create bucket  
-  - Bucket type:    General
-  - Bucket name:    test-multi-az-omar
-  - Keep default settings (Private)
-
-- After creation, upload the frontend file `index.html`.
-```
-
-5.6. IAM Role
-```init
-- IAM > Roles > Create role  
-  - Trusted entity:     AWS service
-  - Use case:           EC2
-  - Select policy:      S3FullAccess
-
-Note: IAM role required for Web EC2 instances to download `index.html` from S3.
-```
-
-5.7. Application Load Balancers & Target Groups
-```init
-### Web Target Group
-- EC2 > Target Groups > Create target group  
-  - Target type:            Instances
-  - Name:                   web-tg
-  - Protocol:               HTTP
-  - Port:                   80
-  - VPC:                    Dev VPC
-  - Health check protocol:  HTTP
-  - Health check path:      "/"
-  - Next > Next > Create
-
----
-
-### Web Application Load Balancer
-- EC2 > Load Balancers > Create load balancer  
-  - Name:               web-alb
-  - Scheme:             Internet-facing
-  - AZs and Subnets:  
-    - us-east-1a: Public Web Subnet AZ1  
-    - us-east-1b: Public Web Subnet AZ2  
-  - Security Group: **alb-web-sg
-  - Listener:           HTTP
-  - Port:               80
-  - Target group:       web-tg
-
----
-
 ### App Target Group
 - EC2 > Target Groups > Create target group  
   - Target type:            Instances
@@ -213,34 +164,19 @@ Note: IAM role required for Web EC2 instances to download `index.html` from S3.
 ### App Application Load Balancer
 - EC2 > Load Balancers > Create load balancer  
   - Name:               app-alb
-  - Scheme:             Internal
+  - Scheme:             Internet-facing
   - AZs and Subnets:  
-    - us-east-1a: Private App Subnet AZ1  
-    - us-east-1b: Private App Subnet AZ2  
+    - us-east-1a: Public Subnet AZ1  
+    - us-east-1b: Public Subnet AZ2  
   - Security Group:     alb-app-sg
   - Listener:           HTTP
   - Port:               80
   - Target group:       app-tg
+
 ```
 
-5.8. Auto Scaling Groups & Launch Templates
+5.6. Auto Scaling Groups & Launch Templates
 ```init
-### Web Launch Template
-- EC2 > Launch templates > Create launch template  
-  - Name:                   web-launch-template
-  - Description:            web-launch-template
-  - Auto Scaling guidance:  Check
-  - Image:                  Amazon Linux 2023 — 64-bit
-  - Instance type:          t2.micro
-  - Key pair:               select key (myec2key)
-  - Security group:         asg-web-sg
-  - IAM instance profile:   ec2-s3-access
-  - User data: paste "web_user_data script" with correct S3 bucket & App ALB DNS name
-
-> Note: The `web_user_data` script installs Apache in reverse proxy mode to avoid CORS issues.
-
----
-
 ### App Launch Template
 - EC2 > Launch templates > Create launch template  
   - Name:                   app-launch-template
@@ -250,23 +186,7 @@ Note: IAM role required for Web EC2 instances to download `index.html` from S3.
   - Instance type:          t2.micro
   - Key pair:               select key (myec2key)
   - Security group:         asg-app-sg
-  - User data: paste "app_user_data script" with updated DB username, password, and RDS endpoint
-
----
-
-### Web Auto Scaling Group
-- EC2 > Auto Scaling groups > Create Auto Scaling group  
-  - Name:                       web-asg
-  - Launch template:            web-launch-template
-  - VPC:                        Dev VPC
-  - Subnets:                    Public Web Subnet AZ1, Public Web Subnet AZ2
-  - Attach to load balancer:    web-tg
-  - Enable ELB health checks:   Check
-  - Desired/Min/Max:            2 / 1 / 3
-  - Automatic scaling:          Target tracking
-    - Metric:                   Average CPU Utilization  
-    - Target value:             50
-  - Monitoring:                 Enable group metrics (CloudWatch)
+  - User data:              paste "app_user_data" script updating DB username, password, and RDS endpoint
 
 ---
 
@@ -283,7 +203,49 @@ Note: IAM role required for Web EC2 instances to download `index.html` from S3.
     - Metric:                   Average CPU Utilization
     - Target value:             50
   - Monitoring:                 Enable group metrics (CloudWatch)
+
 ```
+
+5.7. S3 Bucket - Static Website Hosting
+```init
+### Create a PUBLIC S3 Bucket and upload index.html
+- S3 > Buckets > Create bucket  
+  - Bucket type:                General
+  - Bucket name:                test-cloud-formation-3-tier-omar
+  - Block all public access:    Unchecked
+  - "Create bucket"
+  - Upload:                     index.html
+
+### Enable Static Website Hosting
+- S3 > Buckets > Properties > Edit Static website hosting
+  - Static website hosting:     Enable
+  - Hosting type:               Hosting type
+  - Index document:             index.html
+
+### Add a Public Read Bucket Policy
+- S3 > Buckets > Permissions > Edit bucket policy
+
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": "*",
+              "Action": "s3:GetObject",
+              "Resource": "<my-bucket-arn>/*"
+            }
+          ]
+        }
+
+Note: Replace <my-bucket-arn> with your bucket ARN.
+
+```
+
+5.8. Testing Connectivity
+Copoy the "Bucket website endpoint" located at "S3 > Buckets > Properties > Static website hosting"
+
+    http://test-static-web-3-tier-omar.s3-website-us-east-1.amazonaws.com
+
 
 5.9. Clean Up Resources
 ```init
@@ -294,8 +256,7 @@ Note: IAM role required for Web EC2 instances to download `index.html` from S3.
 - Security Groups  
 - NAT Gateways  
 - VPC  
-- Elastic IPs  
-- IAM Role  
+- Elastic IPs
 - S3 Bucket  
 ```
 
@@ -340,11 +301,12 @@ library-management/
 ├── deployment                  # Deployment-related files and scripts
 │   └── w2_docker_ec2_rds       
 │   └── w3_vpc_networking
-    └── w4_high_available_3_tier_arch   # Week 4: High Available 3-Tier-Architecture
+│   └── w4_high_available_3_tier_arch
+    └── w5_s3_static_web_3_tier_arch
         ├── app_user_data.sh            # User Data script for app launch template
         ├── diagram.png                 # Architecture diagram for cloud deployment
         ├── README.md                   # Deployment instructions and notes    
-        └── web_user_data.sh            # User Data script for web launch template
+        └── index.html                  # File with fornt end and API connectivity to the backend
 ├── diagram.png                 # High-level project architecture diagram
 ├── docker-compose.yml          # To Construct the DB locally for dev tests
 ├── Dockerfile                  # Instructions to build the FastAPI app container

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Library Management</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f8f9fa;
+      color: #333;
+    }
+    header {
+      background: #007bff;
+      color: white;
+      padding: 1rem 2rem;
+      text-align: center;
+      font-size: 1.4rem;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+    main {
+      max-width: 900px;
+      margin: 2rem auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 2rem;
+    }
+    section {
+      margin-bottom: 2.5rem;
+    }
+    h2 {
+      color: #007bff;
+      border-bottom: 2px solid #007bff;
+      padding-bottom: 0.4rem;
+    }
+    form {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    input {
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1rem;
+      flex: 1;
+    }
+    button {
+      background: #007bff;
+      border: none;
+      color: white;
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      padding: 0.6rem;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+    }
+    th {
+      background: #f1f1f1;
+    }
+    .actions button {
+      background: #28a745;
+      margin-right: 0.5rem;
+    }
+    .actions button.return {
+      background: #ffc107;
+      color: #333;
+    }
+    .actions button:hover {
+      opacity: 0.85;
+    }
+  </style>
+</head>
+<body>
+  <header>📚 Library Management Dashboard</header>
+  <main>
+    <!-- USERS SECTION -->
+    <section>
+      <h2>Users</h2>
+      <form id="userForm">
+        <input type="text" id="username" placeholder="Enter user name" required />
+        <button type="submit">Add User</button>
+      </form>
+      <table id="usersTable">
+        <thead><tr><th>ID</th><th>Name</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- BOOKS SECTION -->
+    <section>
+      <h2>Books</h2>
+      <form id="bookForm">
+        <input type="text" id="bookTitle" placeholder="Book title" required />
+        <input type="text" id="bookAuthor" placeholder="Author" required />
+        <button type="submit">Add Book</button>
+      </form>
+      <table id="booksTable">
+        <thead>
+          <tr><th>ID</th><th>Title</th><th>Author</th><th>Actions</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script>
+    const API_BASE = "http://<alb_dns_name>";           // Update with ALB's DNS name
+    
+    // Borrow a book
+    async function borrowBook(bookId, userId) {
+      if (!userId) return;
+      try {
+        const res = await fetch(`${API_BASE}/books/${bookId}/borrow/${userId}`, { method: "POST" });
+        if (!res.ok) {
+          const errorData = await res.json();
+          alert("Error: " + errorData.detail);
+          return;
+        }
+        const book = await res.json();
+        alert(`Book "${book.title}" borrowed successfully by user ${userId}`);
+        loadBooks();
+      } catch (err) {
+        console.error(err);
+        alert("Unexpected error occurred while borrowing the book.");
+      }
+    }
+    
+    // Return a book
+    async function returnBook(bookId, userId) {
+      if (!userId) return;
+      try {
+        const res = await fetch(`${API_BASE}/books/${bookId}/return/${userId}`, { method: "POST" });
+        if (!res.ok) {
+          const errorData = await res.json();
+          alert("Error: " + errorData.detail);
+          return;
+        }
+        const book = await res.json();
+        alert(`Book "${book.title}" returned successfully by user ${userId}`);
+        loadBooks();
+      } catch (err) {
+        console.error(err);
+        alert("Unexpected error occurred while returning the book.");
+      }
+    }
+    
+    // Users
+    document.getElementById("userForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("username").value.trim();
+      if (!name) return;
+      try {
+        const res = await fetch(`${API_BASE}/users/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name }),
+        });
+        if (!res.ok) {
+          const errorData = await res.json();
+          alert("Error creating user: " + errorData.detail);
+          return;
+        }
+        document.getElementById("username").value = "";
+        loadUsers();
+      } catch (err) {
+        console.error(err);
+        alert("Unexpected error occurred while creating the user.");
+      }
+    });
+    
+    // Books
+    document.getElementById("bookForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const title = document.getElementById("bookTitle").value.trim();
+      const author = document.getElementById("bookAuthor").value.trim();
+      if (!title || !author) return;
+      try {
+        const res = await fetch(`${API_BASE}/books/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, author }),
+        });
+        if (!res.ok) {
+          const errorData = await res.json();
+          alert("Error creating book: " + errorData.detail);
+          return;
+        }
+        document.getElementById("bookTitle").value = "";
+        document.getElementById("bookAuthor").value = "";
+        loadBooks();
+      } catch (err) {
+        console.error(err);
+        alert("Unexpected error occurred while creating the book.");
+      }
+    });
+    
+    // Load functions remain the same
+    async function loadUsers() {
+      try {
+        const res = await fetch(`${API_BASE}/users/`);
+        const users = await res.json();
+        const tbody = document.querySelector("#usersTable tbody");
+        tbody.innerHTML = "";
+        users.forEach(u => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${u.id || ""}</td><td>${u.name}</td>`;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error(err);
+        alert("Failed to load users.");
+      }
+    }
+    
+    async function loadBooks() {
+      try {
+        const res = await fetch(`${API_BASE}/books/`);
+        const books = await res.json();
+        const tbody = document.querySelector("#booksTable tbody");
+        tbody.innerHTML = "";
+        books.forEach(b => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${b.id || ""}</td>
+            <td>${b.title}</td>
+            <td>${b.author}</td>
+            <td class="actions">
+              <button onclick="borrowBook(${b.id}, prompt('Enter user ID to borrow:'))">Borrow</button>
+              <button class="return" onclick="returnBook(${b.id}, prompt('Enter user ID to return:'))">Return</button>
+            </td>`;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error(err);
+        alert("Failed to load books.");
+      }
+    }
+    
+    // Initial Load
+    loadUsers();
+    loadBooks();
+  </script>    
+</body>
+</html>

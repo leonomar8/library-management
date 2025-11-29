@@ -1,4 +1,4 @@
-# Week 4: High Available 3 Tier Architecture
+# Week 5: Cloud Formation and 3 Tier Architecture
 This module focuses on designing and deploying a **highly available 3-Tier Architecture** on AWS for the Library Management System — a backend API developed with FastAPI that manages books, users, and borrowing operations using full CRUD functionality.
 
 The project evolves from local container testing to a **production-grade cloud deployment** using:
@@ -86,16 +86,14 @@ The deployment follows a local-to-cloud workflow:
 ## 5. Deployment $ Configuration Steps (AWS Console)
 
 5.1. Create a New VPC
-- Create **Dev VPC** as explained in Week 3 project.
+- Create **Dev VPC** as explained in Week 3 project "VPC Networking".
 
 5.2. Security Groups
 ```init
 ### Security Group Table
 | Name        | Ports  | Origin        |
 |-------------|--------|---------------|
-| alb-web-sg  | 80,443 | 0.0.0.0/0     |
-| asg-web-sg  | 80,443 | alb-web-sg    |
-| alb-app-sg  | 80     | asg-web-sg    |
+| alb-app-sg  | 80,443 | 0.0.0.0/0     |
 | asg-app-sg  | 8000   | alb-app-sg    |
 | data-sg     | 3306   | asg-app-sg    |
 
@@ -148,55 +146,34 @@ Spin up an RDS instance with:
 - Once RDS is active → copy the connection `endpoint`.
 ```
 
-5.5. S3 Bucket
+5.5. S3 Bucket + Cloud Formation
 ```init
+Create a Private S3 Bucket and upload index.html
+
 - S3 > Buckets > Create bucket  
-  - Bucket type:    General
-  - Bucket name:    test-multi-az-omar
-  - Keep default settings (Private)
+  - Bucket type:              General
+  - Bucket name:              test-cloud-formation-3-tier-omar
+  - Block all public access:  CHECKED
+  - "Create bucket"
+  - Upload:                   index.html
 
-- After creation, upload the frontend file `index.html`.
-```
+Note: When connecting S3 Bucket and Cloud Front, NO need to enable "Static website hosting”:
 
-5.6. IAM Role
-```init
-- IAM > Roles > Create role  
-  - Trusted entity:     AWS service
-  - Use case:           EC2
-  - Select policy:      S3FullAccess
-
-Note: IAM role required for Web EC2 instances to download `index.html` from S3.
+Create CloudFront with Origin Access Control (OAC)
+- S3 > Buckets > Open the bucket > Permissions tab > Edit bucket policy:
+  - Distribution name:    lib-mgmt-distribution
+  - Origin type:          Amazon S3
+  - S3 origin:            Select your S3 bucket
+  - Origin path:          "Leave EMPTY"
+  - WAF:                  Disabled (for test)
+     
+Note: AOC is automatically enabled after you create S3 as origin in Cloud Front
+Note: After linking CloudFront with your S3 Bucket, an AOC Bucket Policy is auto created in your bucket
+Note: If you enable WAF it costs $14 for 10 million requests/month
 ```
 
 5.7. Application Load Balancers & Target Groups
 ```init
-### Web Target Group
-- EC2 > Target Groups > Create target group  
-  - Target type:            Instances
-  - Name:                   web-tg
-  - Protocol:               HTTP
-  - Port:                   80
-  - VPC:                    Dev VPC
-  - Health check protocol:  HTTP
-  - Health check path:      "/"
-  - Next > Next > Create
-
----
-
-### Web Application Load Balancer
-- EC2 > Load Balancers > Create load balancer  
-  - Name:               web-alb
-  - Scheme:             Internet-facing
-  - AZs and Subnets:  
-    - us-east-1a: Public Web Subnet AZ1  
-    - us-east-1b: Public Web Subnet AZ2  
-  - Security Group: **alb-web-sg
-  - Listener:           HTTP
-  - Port:               80
-  - Target group:       web-tg
-
----
-
 ### App Target Group
 - EC2 > Target Groups > Create target group  
   - Target type:            Instances
@@ -213,10 +190,10 @@ Note: IAM role required for Web EC2 instances to download `index.html` from S3.
 ### App Application Load Balancer
 - EC2 > Load Balancers > Create load balancer  
   - Name:               app-alb
-  - Scheme:             Internal
+  - Scheme:             Internet-facing
   - AZs and Subnets:  
-    - us-east-1a: Private App Subnet AZ1  
-    - us-east-1b: Private App Subnet AZ2  
+    - us-east-1a: Public Subnet AZ1  
+    - us-east-1b: Public Subnet AZ2  
   - Security Group:     alb-app-sg
   - Listener:           HTTP
   - Port:               80
@@ -288,7 +265,6 @@ Note: IAM role required for Web EC2 instances to download `index.html` from S3.
 5.9. Clean Up Resources
 ```init
 ### Follow this order to erase resources
-- RDS
 - Auto Scaling Groups & Launch Templates  
 - Load Balancers & Target Groups  
 - Security Groups  
