@@ -1,4 +1,4 @@
-# Week 5: Cloud Formation and 3 Tier Architecture
+# Week 5: S3 Static Web with a 3 Tier Architecture
 This module extends the 3-Tier Architecture by introducing Amazon S3 Static Website Hosting as the Web Tier entry point. The project integrates a public S3 website with an internal FastAPI backend and a Multi-AZ RDS database, completing the web–app–data workflow. This setup demonstrates how to offload static content to S3 while maintaining secure, scalable backend layers.
 
 ---
