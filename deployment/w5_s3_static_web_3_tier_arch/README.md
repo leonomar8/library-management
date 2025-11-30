@@ -17,44 +17,22 @@ Deploy a static web frontend on S3 that communicates with the FastAPI backend ru
 ## 2. Deployment Strategy
 The deployment approach connects the static frontend to the backend services:
 
-### S3 Static Web Hosting
-- Public S3 bucket hosting index.html as the web entry point.
-- Static Website Hosting enabled with public read access.
-
-### Backend Connectivity
-- The S3 frontend sends API requests to the App Tier ALB.
-- The existing 3-Tier environment from Week 4 is reused for backend logic and database operations.
-
-### Security & IAM
-- Public bucket policy for read-only access.
-- Backend access controlled through existing Security Groups and private subnets.
+- **Frontend (S3)**: A public S3 bucket hosts the index.html file with Static Website Hosting enabled for global access.
+- **Backend Routing**: The frontend communicates with the FastAPI backend through the App Tier Application Load Balancer (ALB) created in the 3-Tier Architecture.
+- **Security & Networking**: A read-only S3 bucket policy allows public access to static assets, while backend traffic remains protected through private subnets and tier-based Security Groups inherited from Week 4.
+- **Integration**: The existing Web, App, and Data tiers handle all dynamic logic and database operations, ensuring a complete end-to-end workflow.
 
 ---
 
 ## 3. Tech Stack
-### Frontend
-- HTML / JavaScript hosted on Amazon S3
-
-### Backend
-- FastAPI (Python)
-- Amazon RDS MySQL Multi-AZ
-
-### AWS Services
-- Amazon S3 (Static Web Hosting)
-- VPC
-- EC2 + Auto Scaling Groups
-- Application Load Balancers + Target Groups
-- Security Groups
-
-### Tools
-- Git
-- Bash scripts
-- Docker / Docker Hub
+- **Frontend**: HTML / JavaScript hosted on Amazon S3
+- **Backend**: FastAPI (Python); Amazon RDS MySQL Multi-AZ
+- **AWS Services**: Amazon S3 (Static Web Hosting) | VPC | EC2 + Auto Scaling Groups | Launch Templates | Application Load Balancers | Target Groups | Security Groups
+- **Tools**: Git | Bash scripts | Docker / Docker Hub
 
 ---
 
 ## 4. Cloud Skills Covered
-
 - Hosting static websites using Amazon S3.
 - Integrating S3 frontends with backend ALBs in a multi-tier architecture.
 - Applying bucket policies for secure public access.
