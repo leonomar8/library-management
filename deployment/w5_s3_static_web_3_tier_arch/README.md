@@ -1,14 +1,5 @@
 # Week 5: Cloud Formation and 3 Tier Architecture
-This module focuses on designing and deploying a **highly available 3-Tier Architecture** on AWS for the Library Management System — a backend API developed with FastAPI that manages books, users, and borrowing operations using full CRUD functionality.
-
-The project evolves from local container testing to a **production-grade cloud deployment** using:
-
-* **Docker containers** for packaging the application
-* **Amazon EC2 Auto Scaling Groups** for the Web and App tiers
-* **Application Load Balancers (ALB)** for traffic distribution
-* **Amazon RDS (MySQL)** in **Multi-AZ** mode for fault-tolerant data storage
-
-This module demonstrates how to build an HA infrastructure capable of withstanding AZ failures while maintaining service continuity.
+This module extends the 3-Tier Architecture by introducing Amazon S3 Static Website Hosting as the Web Tier entry point. The project integrates a public S3 website with an internal FastAPI backend and a Multi-AZ RDS database, completing the web–app–data workflow. This setup demonstrates how to offload static content to S3 while maintaining secure, scalable backend layers.
 
 ---
 
@@ -19,67 +10,57 @@ This module demonstrates how to build an HA infrastructure capable of withstandi
 ---
 
 ## 1. Objective
-Design and deploy a **Highly Available 3-Tier Architecture** using Dockerized FastAPI services, AWS load balancers, Auto Scaling Groups, and an RDS Multi-AZ database.
-
-The objective is to provide a **scalable, resilient, and production-ready cloud environment** following best practices for networking, IAM, compute, and database operations.
-
----
-Here are **simplified and cleaner versions** of **Sections 2, 3, and 4**, keeping them technical but more concise.
+Deploy a static web frontend on S3 that communicates with the FastAPI backend running in a Highly Available 3-Tier Architecture. The objective is to enhance scalability, reduce load on the Web tier, and follow AWS best practices for static hosting, networking, and secure API access.
 
 ---
 
 ## 2. Deployment Strategy
-The deployment follows a local-to-cloud workflow:
+The deployment approach connects the static frontend to the backend services:
 
-### **Local Environment**
-* The FastAPI application runs in a Docker container.
-* MySQL runs via docker-compose for local testing.
-* After validation, the image is pushed to Docker Hub.
+### S3 Static Web Hosting
+- Public S3 bucket hosting index.html as the web entry point.
+- Static Website Hosting enabled with public read access.
 
-### **AWS Deployment**
-* **Web Tier:** EC2 instances in an Auto Scaling Group behind a public ALB. Apache acts as a reverse proxy to the App Tier.
-* **App Tier:** EC2 instances running the FastAPI container, behind an internal ALB.
-* **Data Tier:** Amazon RDS MySQL in Multi-AZ for high availability.
+### Backend Connectivity
+- The S3 frontend sends API requests to the App Tier ALB.
+- The existing 3-Tier environment from Week 4 is reused for backend logic and database operations.
 
-### **Networking & Security**
-* Security Groups restrict communication between tiers (Web → App → RDS).
-* IAM roles allow the Web Tier to fetch the frontend file from S3.
-* User Data scripts automate the installation and container startup on EC2.
+### Security & IAM
+- Public bucket policy for read-only access.
+- Backend access controlled through existing Security Groups and private subnets.
 
 ---
 
 ## 3. Tech Stack
+### Frontend
+- HTML / JavaScript hosted on Amazon S3
 
-### **Application & Database**
-* FastAPI (backend)
-* MySQL (Amazon RDS Multi-AZ)
+### Backend
+- FastAPI (Python)
+- Amazon RDS MySQL Multi-AZ
 
-### **Containerization & Registry**
-* Docker / docker-compose
-* Docker Hub
+### AWS Services
+- Amazon S3 (Static Web Hosting)
+- VPC
+- EC2 + Auto Scaling Groups
+- Application Load Balancers + Target Groups
+- Security Groups
 
-### **AWS Services**
-* EC2 + Auto Scaling Groups
-* Application Load Balancers (public and internal)
-* Amazon S3
-* Security Groups
-* IAM Roles
-
-### **Supporting Tools**
-* Git
-* Bash User Data scripts
+### Tools
+- Git
+- Bash scripts
+- Docker / Docker Hub
 
 ---
 
 ## 4. Cloud Skills Covered
 
-* Designed and deployed a **3-Tier Highly Available Architecture** on AWS.
-* Built Docker images and deployed containers on EC2 using User Data.
-* Configured a **public Web ALB** and **internal App ALB** for traffic distribution.
-* Set up **RDS MySQL Multi-AZ** for resilient database operations.
-* Implemented **Auto Scaling Groups** for automatic recovery and scaling.
-* Applied Security Groups to control traffic between Web, App, and Data tiers.
-* Used IAM roles for secure S3 access from EC2 instances.
+- Hosting static websites using Amazon S3.
+- Integrating S3 frontends with backend ALBs in a multi-tier architecture.
+- Applying bucket policies for secure public access.
+- Connecting S3-hosted web apps to private backend services.
+- Enhancing scalability by separating static and dynamic workloads.
+- Using AWS best practices for networking, IAM, and HA architecture.
 
 ---
 
