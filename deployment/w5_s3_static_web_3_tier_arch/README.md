@@ -166,8 +166,8 @@ Spin up an RDS instance with:
   - Name:               app-alb
   - Scheme:             Internet-facing
   - AZs and Subnets:  
-    - us-east-1a: Public Subnet AZ1  
-    - us-east-1b: Public Subnet AZ2  
+    - us-east-1a:       Public Subnet AZ1  
+    - us-east-1b:       Public Subnet AZ2  
   - Security Group:     alb-app-sg
   - Listener:           HTTP
   - Port:               80
@@ -187,6 +187,8 @@ Spin up an RDS instance with:
   - Key pair:               select key (myec2key)
   - Security group:         asg-app-sg
   - User data:              paste "app_user_data" script updating DB username, password, and RDS endpoint
+
+Note: "app_user_data" script is inside week 5 project folder.
 
 ---
 
@@ -208,13 +210,14 @@ Spin up an RDS instance with:
 
 5.7. S3 Bucket - Static Website Hosting
 ```init
-### Create a PUBLIC S3 Bucket and upload index.html
+### Create a PUBLIC S3 Bucket
 - S3 > Buckets > Create bucket  
   - Bucket type:                General
-  - Bucket name:                test-cloud-formation-3-tier-omar
+  - Bucket name:                test-s3-static-web-3-tier-arch
   - Block all public access:    Unchecked
   - "Create bucket"
-  - Upload:                     index.html
+
+### Upload the index.html file, that is inside week 5 project folder, to your Bucket.
 
 ### Enable Static Website Hosting
 - S3 > Buckets > Properties > Edit Static website hosting
