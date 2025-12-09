@@ -58,8 +58,8 @@ The deployment approach connects the static frontend to the backend services:
 
 ### Configuration on AWS Console
 - VPC > Security Groups > Create Security Group  
-- SG name:          alb-web-sg 
-- Description:      alb-web-sg
+- SG name:          alb-app-sg 
+- Description:      alb-app-sg
 - VPC:              Dev VPC  
 - Inbound Rules:  
   - HTTP from anywhere  
@@ -177,6 +177,7 @@ Note: "app_user_data" script is inside week 5 project folder.
   - "Create bucket"
 
 ### Upload the index.html file, that is inside week 5 project folder, to your Bucket.
+  - Update line 126 with ALB DNS > "http://<alb_dns_name>"; 
 
 ### Enable Static Website Hosting
 - S3 > Buckets > Properties > Edit Static website hosting

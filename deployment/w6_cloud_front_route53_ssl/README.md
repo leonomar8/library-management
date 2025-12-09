@@ -1,4 +1,4 @@
-# Week 5: Cloud Formation and 3 Tier Architecture
+# Week 6: Cloud Front, Route 53 and SSL Certificates
 This module focuses on designing and deploying a **highly available 3-Tier Architecture** on AWS for the Library Management System — a backend API developed with FastAPI that manages books, users, and borrowing operations using full CRUD functionality.
 
 The project evolves from local container testing to a **production-grade cloud deployment** using:
@@ -99,8 +99,8 @@ The deployment follows a local-to-cloud workflow:
 
 ### Configuration on AWS Console
 - VPC > Security Groups > Create Security Group  
-- SG name:          alb-web-sg 
-- Description:      alb-web-sg
+- SG name:          alb-app-sg 
+- Description:      alb-app-sg
 - VPC:              Dev VPC  
 - Inbound Rules:  
   - HTTP from anywhere  
@@ -146,33 +146,17 @@ Spin up an RDS instance with:
 - Once RDS is active → copy the connection `endpoint`.
 ```
 
-5.5. S3 Bucket + Cloud Formation
+5.5. AWS Certificate Manager (ACM)
 ```init
-Create a Private S3 Bucket and upload index.html
-
-- S3 > Buckets > Create bucket  
-  - Bucket type:              General
-  - Bucket name:              test-cloud-formation-3-tier-omar
-  - Block all public access:  CHECKED
-  - "Create bucket"
-  - Upload:                   index.html
-
-Note: When connecting S3 Bucket and Cloud Front, NO need to enable "Static website hosting”:
-
-Create CloudFront with Origin Access Control (OAC)
-- S3 > Buckets > Open the bucket > Permissions tab > Edit bucket policy:
-  - Distribution name:    lib-mgmt-distribution
-  - Origin type:          Amazon S3
-  - S3 origin:            Select your S3 bucket
-  - Origin path:          "Leave EMPTY"
-  - WAF:                  Disabled (for test)
-     
-Note: AOC is automatically enabled after you create S3 as origin in Cloud Front
-Note: After linking CloudFront with your S3 Bucket, an AOC Bucket Policy is auto created in your bucket
-Note: If you enable WAF it costs $14 for 10 million requests/month
+### Request a certificate
+- AWS Certificate Manager > Certificates > Request certificate
+  - Request a public certificate:       CHECKED
+  - "Next"
+  - Fully qualified domain name:        omarleon.online
+                                        *.omarleon.online
 ```
 
-5.7. Application Load Balancers & Target Groups
+5.6. Application Load Balancers & Target Groups
 ```init
 ### App Target Group
 - EC2 > Target Groups > Create target group  
@@ -182,42 +166,32 @@ Note: If you enable WAF it costs $14 for 10 million requests/month
   - Port:                   8000
   - VPC:                    Dev VPC
   - Health check protocol:  HTTP
-  - Health check path:      "/users/"  
+  - Health check path:      "/users/"
   - Next > Next > Create
 
 ---
 
 ### App Application Load Balancer
 - EC2 > Load Balancers > Create load balancer  
-  - Name:               app-alb
-  - Scheme:             Internet-facing
+  - Name:                     app-alb
+  - Scheme:                   Internet-facing
   - AZs and Subnets:  
-    - us-east-1a: Public Subnet AZ1  
-    - us-east-1b: Public Subnet AZ2  
-  - Security Group:     alb-app-sg
-  - Listener:           HTTP
-  - Port:               80
-  - Target group:       app-tg
+    - us-east-1a:             Public Subnet AZ1  
+    - us-east-1b:             Public Subnet AZ2  
+  - Security Group:           alb-app-sg
+  - Listener:                 HTTP
+  - Port:                     80
+  - Target group:             app-tg
+  - "Add Listener"
+  - Listener:                 HTTPS
+  - Port:                     443
+  - Target group:             app-tg
+  - Certificate (from ACM):   omarleon.online
+
 ```
 
-5.8. Auto Scaling Groups & Launch Templates
+5.7. Auto Scaling Groups & Launch Templates
 ```init
-### Web Launch Template
-- EC2 > Launch templates > Create launch template  
-  - Name:                   web-launch-template
-  - Description:            web-launch-template
-  - Auto Scaling guidance:  Check
-  - Image:                  Amazon Linux 2023 — 64-bit
-  - Instance type:          t2.micro
-  - Key pair:               select key (myec2key)
-  - Security group:         asg-web-sg
-  - IAM instance profile:   ec2-s3-access
-  - User data: paste "web_user_data script" with correct S3 bucket & App ALB DNS name
-
-> Note: The `web_user_data` script installs Apache in reverse proxy mode to avoid CORS issues.
-
----
-
 ### App Launch Template
 - EC2 > Launch templates > Create launch template  
   - Name:                   app-launch-template
@@ -227,23 +201,9 @@ Note: If you enable WAF it costs $14 for 10 million requests/month
   - Instance type:          t2.micro
   - Key pair:               select key (myec2key)
   - Security group:         asg-app-sg
-  - User data: paste "app_user_data script" with updated DB username, password, and RDS endpoint
+  - User data:              paste "app_user_data" script updating DB username, password, and RDS endpoint
 
----
-
-### Web Auto Scaling Group
-- EC2 > Auto Scaling groups > Create Auto Scaling group  
-  - Name:                       web-asg
-  - Launch template:            web-launch-template
-  - VPC:                        Dev VPC
-  - Subnets:                    Public Web Subnet AZ1, Public Web Subnet AZ2
-  - Attach to load balancer:    web-tg
-  - Enable ELB health checks:   Check
-  - Desired/Min/Max:            2 / 1 / 3
-  - Automatic scaling:          Target tracking
-    - Metric:                   Average CPU Utilization  
-    - Target value:             50
-  - Monitoring:                 Enable group metrics (CloudWatch)
+Note: "app_user_data" script is inside week 6 project folder.
 
 ---
 
@@ -260,19 +220,91 @@ Note: If you enable WAF it costs $14 for 10 million requests/month
     - Metric:                   Average CPU Utilization
     - Target value:             50
   - Monitoring:                 Enable group metrics (CloudWatch)
+
 ```
 
-5.9. Clean Up Resources
+5.8. Route 53
+```init
+### Create a Hosted zone
+- Route 53 > Hosted zones > Create hosted zone
+  - Domain name:          omarleon.online
+  - Public hosted zone:   Checked
+  - "Create hosted zone"
+
+### Create DNS records
+-Route 53 > Hosted zones > omarleon.online > Create record
+
+#### Record for ACM
+  - Record type:      CNAME
+  - Record name:      _1a20627d725c193bd893658c383446af.omarleon.online.
+  - Value:            _b1854e2aa04954d135f3814c83537d2f.jkddzztszm.acm-validations.aws.
+
+#### Record for Cloud Front Distribution
+  - Record type:      A + Alias enabled
+  - Record name:      omarleon.online
+  - Value:            <CloudFront Distribution Domain>
+
+#### Record for ALB DNS
+  - Record type:      A + Alias enabled
+  - Record name:      app.omarleon.online
+  - Value:            <ALB DNS>
+```
+
+5.9. S3 Bucket
+```init
+Create a Private S3 Bucket and upload index.html
+
+- S3 > Buckets > Create bucket  
+  - Bucket type:              General
+  - Bucket name:              test-cloud-formation-3-tier-omar
+  - Block all public access:  CHECKED
+  - "Create bucket"
+    
+  - Upload:                   index.html            //Update ALB DNS: https://app.omarleon.online
+
+Note: When connecting S3 Bucket and Cloud Front, NO need to enable "Static website hosting”:
+Note: Cloud Front only uses HTTPS and subsequent connections must also use HTTPS, this includes ALB. If you configure ALB with HTTP listener you'll get an error.
+
+    Browser > Route 53 > (HTTPS) Cloud Front/S3 Bucket > Browser
+    Browser > Route 53 > (HTTPS) ALB > (port 8000) ASG|EC2 > (port 3306) RDS
+```
+
+5.10. Cloud Front
+```init
+Create CloudFront with Origin Access Control (OAC) pointing to S3
+- CloudFront > Distributions > Create distribution
+  - Distribution name:                              lib-mgmt-distribution
+  - Domain:                                         omarleon.online
+  - Origin type:                                    S3
+  - S3 origin:                                      Select your S3 bucket
+  - Origin path:                                    <leave blank if index.html is in root>
+  - Allow private S3 bucket access to CloudFront:   CHECKED (This enables OAC)
+  - WAF:                                            Disabled
+     
+Note: AOC is automatically enabled after you create S3 as origin in Cloud Front
+Note: After linking CloudFront with your S3 Bucket, an AOC Bucket Policy is auto created in your bucket
+Note: If you enable WAF it costs $14 for 10 million requests/month
+```
+
+5.11. Testing
+Use the Cloud Front 
+```init
+  https://d3auiys4pgyi40.cloudfront.net/index.html
+```
+
+5.12. Clean Up Resources
 ```init
 ### Follow this order to erase resources
+- RDS
 - Auto Scaling Groups & Launch Templates  
 - Load Balancers & Target Groups  
 - Security Groups  
 - NAT Gateways  
 - VPC  
-- Elastic IPs  
-- IAM Role  
-- S3 Bucket  
+- Elastic IPs
+- Clouf Front Distribution
+- S3 Bucket
+- Route 53 Hosted Zone
 ```
 
 ## 6. Endpoints and CURLs
@@ -316,11 +348,12 @@ library-management/
 ├── deployment                  # Deployment-related files and scripts
 │   └── w2_docker_ec2_rds       
 │   └── w3_vpc_networking
-    └── w4_high_available_3_tier_arch   # Week 4: High Available 3-Tier-Architecture
+    └── w4_high_available_3_tier_arch   
+    └── w5_high_available_3_tier_arch
+    └── w6_high_available_3_tier_arch   # Week 6: CloudFront, Route53, SSL Certificates with ACM
         ├── app_user_data.sh            # User Data script for app launch template
         ├── diagram.png                 # Architecture diagram for cloud deployment
-        ├── README.md                   # Deployment instructions and notes    
-        └── web_user_data.sh            # User Data script for web launch template
+        ├── README.md                   # Deployment instructions and notes
 ├── diagram.png                 # High-level project architecture diagram
 ├── docker-compose.yml          # To Construct the DB locally for dev tests
 ├── Dockerfile                  # Instructions to build the FastAPI app container
