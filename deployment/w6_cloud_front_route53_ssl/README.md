@@ -1,94 +1,58 @@
 # Week 6: CloudFront, Route 53 and SSL Certificates
-This project implements a **highly available, production-ready 3-Tier Architecture** for the Library Management System on AWS. The backend API, developed with **FastAPI**, manages books, users, and borrowing operations using full CRUD functionality. The system is containerized with **Docker** and deployed on **EC2 instances** behind **Application Load Balancers (ALB)**, connected to a **Multi-AZ RDS MySQL** database for fault tolerance.
-
-The latest deployment includes **CloudFront for CDN**, **Route 53 for DNS management**, and **AWS Certificate Manager (ACM)** for SSL certificates, enabling full **HTTPS end-to-end** connectivity and secure, low-latency access to both static and dynamic content.
+This week, the Library Management System builds on the existing **highly available 3-Tier AWS architecture** by adding **CloudFront for CDN, Route 53 for DNS management, and ACM for HTTPS**. These enhancements provide **secure, low-latency access** to static and dynamic content, complementing the existing EC2, ALB, and RDS Multi-AZ deployment.
 
 ---
 
 ![Alt text](diagram.png)
 
 
-
 ---
 
 ## 1. Objective
 
-The objective of this project is to design and deploy a **scalable, resilient, and secure cloud environment** for the Library Management System by:
+Enhance the existing architecture with:
 
-* Implementing a **3-Tier Architecture** with Web, Application, and Data tiers.
-* Containerizing the backend API with **Docker** and managing deployment via **Auto Scaling Groups**.
-* Ensuring **high availability** with **Multi-AZ RDS** and health-checked load balancers.
-* Integrating **CloudFront**, **Route 53**, and **ACM** for global content delivery, secure HTTPS connections, and custom domain support.
-
----
-
-## 2. Deployment Strategy
-
-### AWS Backend Deployment
-
-* **App Tier:** EC2 instances running the FastAPI container, provisioned via **Launch Templates** and managed by an **Auto Scaling Group**.
-* **Internal ALB:** Distributes traffic to the App Tier with health checks for resilience.
-* **Data Tier:** RDS MySQL in **Multi-AZ** mode ensures high availability and automatic failover.
-
-### Web & Content Delivery
-
-* **CloudFront** serves static content from S3 with global caching.
-* **Origin Access Control (OAC)** secures access from CloudFront to the S3 bucket.
-* **Public ALB** routes user requests to the Application Tier.
-* **Route 53** manages DNS and custom domain configuration for CloudFront and ALB.
-* **ACM** provides SSL certificates, enabling full **HTTPS** connectivity.
-
-### Networking & Security
-
-* **Security Groups** restrict communication between Web, App, and Data tiers.
-* All communication is secured using **HTTPS** via ACM certificates.
+* **CloudFront** for global static content delivery.
+* **Route 53** for DNS and custom domain management.
+* **ACM** for SSL certificates enabling **end-to-end HTTPS**.
 
 ---
 
-## 3. Tech Stack
+## 2. Tech Stack
 
-### Application & Database
-  - FastAPI (backend API)
-  - MySQL (Amazon RDS Multi-AZ)
+**New Services:**
 
-### Containerization & Registry
-  - Docker
-  - Docker Hub
+* CloudFront – CDN
+* Route 53 – DNS
+* ACM – SSL certificates
 
-### AWS Services
-  - EC2 + Auto Scaling Groups
-  - Application Load Balancers (ALB) – public and internal
-  - Amazon S3 – private bucket for static content
-  - CloudFront – CDN distribution
-  - Route 53 – DNS management
-  - AWS Certificate Manager (ACM) – SSL certificates
-  - Security Groups & IAM Roles
+**Existing Components:**
 
-### Supporting Tools
-  - Git
-  - Bash scripts (User Data)
+* EC2 + Auto Scaling Groups
+* Application Load Balancers
+* Amazon S3
+* FastAPI + MySQL (RDS Multi-AZ)
+* Docker / Docker Hub
+* Security Groups & IAM Roles
+* Git & Bash scripts
 
 ---
 
-## 4. Cloud Skills Covered
+## 3. Cloud Skills Covered
 
-* Designed and deployed a **3-Tier Highly Available Architecture** on AWS.
-* Built and deployed Docker containers to EC2 using **User Data scripts**.
-* Configured **internal and public ALBs** for traffic routing.
-* Set up **RDS MySQL Multi-AZ** for resilient database operations.
-* Implemented **Auto Scaling Groups** for automatic scaling and recovery.
-* Applied **Security Groups** for traffic isolation and IAM roles for secure S3 access.
-* Integrated **CloudFront** for global content delivery and **Route 53** for custom domain DNS management.
-* Enabled full **HTTPS end-to-end** connectivity using **ACM certificates**.
+* Configured **CloudFront** with **OAC** for secure content delivery.
+* Managed **DNS and custom domains** via **Route 53**.
+* Enabled **HTTPS end-to-end** with **ACM certificates**.
+* Reinforced **resilient, scalable 3-Tier architecture** skills with incremental AWS enhancements.
 
 ---
 
-## 5. Deployment & Configuration Steps (AWS Console)
+## 4. Deployment & Configuration Steps (AWS Console)
 
-5.1. Create a New VPC
+4.1. Create a New VPC
 - Create **Dev VPC** as explained in Week 3 project "VPC Networking".
 
-5.2. Security Groups
+4.2. Security Groups
 ```init
 ### Security Group Table
 | Name        | Ports  | Origin        |
@@ -109,7 +73,7 @@ The objective of this project is to design and deploy a **scalable, resilient, a
 Note: Repeat these steps for the other SG
 ```
 
-5.3. RDS Subnet Group
+4.3. RDS Subnet Group
 ```init
 - RDS > Subnet Group > Create DB subnet group  
   - Name:           db-subnet-group-multi-az
@@ -121,7 +85,7 @@ Note: Repeat these steps for the other SG
     - Private Data Subnet AZ2  
 ```
 
-5.4. RDS Multi-AZ Deployment
+4.4. RDS Multi-AZ Deployment
 ```init
 Spin up an RDS instance with:
 
@@ -146,7 +110,7 @@ Spin up an RDS instance with:
 - Once RDS is active → copy the connection `endpoint`.
 ```
 
-5.5. AWS Certificate Manager (ACM)
+4.5. AWS Certificate Manager (ACM)
 ```init
 ### Request a certificate
 - AWS Certificate Manager > Certificates > Request certificate
@@ -156,7 +120,7 @@ Spin up an RDS instance with:
                                         *.omarleon.online
 ```
 
-5.6. Application Load Balancers & Target Groups
+4.6. Application Load Balancers & Target Groups
 ```init
 ### App Target Group
 - EC2 > Target Groups > Create target group  
@@ -190,7 +154,7 @@ Spin up an RDS instance with:
 
 ```
 
-5.7. Auto Scaling Groups & Launch Templates
+4.7. Auto Scaling Groups & Launch Templates
 ```init
 ### App Launch Template
 - EC2 > Launch templates > Create launch template  
@@ -223,7 +187,7 @@ Note: "app_user_data" script is inside week 6 project folder.
 
 ```
 
-5.8. Route 53
+4.8. Route 53
 ```init
 ### Create a Hosted zone
 - Route 53 > Hosted zones > Create hosted zone
@@ -250,7 +214,7 @@ Note: "app_user_data" script is inside week 6 project folder.
   - Value:            <ALB DNS>
 ```
 
-5.9. S3 Bucket
+4.9. S3 Bucket
 ```init
 Create a Private S3 Bucket and upload index.html
 
@@ -269,7 +233,7 @@ Note: Cloud Front only uses HTTPS and subsequent connections must also use HTTPS
     Browser > Route 53 > (HTTPS) ALB > (port 8000) ASG|EC2 > (port 3306) RDS
 ```
 
-5.10. Cloud Front
+4.10. Cloud Front
 ```init
 Create CloudFront with Origin Access Control (OAC) pointing to S3
 - CloudFront > Distributions > Create distribution
@@ -286,13 +250,13 @@ Note: After linking CloudFront with your S3 Bucket, an AOC Bucket Policy is auto
 Note: If you enable WAF it costs $14 for 10 million requests/month
 ```
 
-5.11. Testing
+4.11. Testing
 Use the Cloud Front 
 ```init
   https://d3auiys4pgyi40.cloudfront.net/index.html
 ```
 
-5.12. Clean Up Resources
+4.12. Clean Up Resources
 ```init
 ### Follow this order to erase resources
 - RDS
@@ -307,7 +271,7 @@ Use the Cloud Front
 - Route 53 Hosted Zone
 ```
 
-## 6. Endpoints and CURLs
+## 5. Endpoints and CURLs
 
 | Method | Endpoint                                 | Description         |
 |--------|------------------------------------------|---------------------|
@@ -340,7 +304,7 @@ curl -X POST <URL>:<port>/books/1/borrow/2
 curl -X POST <URL>:<port>/books/1/return/2
 ```
 
-## 7. Project Structure
+## 6. Project Structure
 
 ```bash
 library-management/
