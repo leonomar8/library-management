@@ -110,7 +110,23 @@ Spin up an RDS instance with:
 - Once RDS is active → copy the connection `endpoint`.
 ```
 
-4.5. AWS Certificate Manager (ACM)
+4.5. Register a Domain Name
+```init
+  - Register the Domain name at AWS Route53 or other domain reigstrar like namecheap.com
+  - I used namecheap for this project since is cheaper (omarleon.online for 2 $us the first year) 
+  - Point your domain name to Route 53's DNS Servers
+  - Access namecheap.com > access your doomain name (omarleon.online) > Manage
+    - NameServers:    Select "Custom DNS"
+    - ns-1179.awsdns-19.org.
+    - ns-2035.awsdns-62.co.uk.
+    - ns-373.awsdns-46.com.
+    - ns-528.awsdns-02.net.
+    - "Save"
+  
+  Note: Wait about 15 minutes for the changes to propagate
+```
+
+4.6. AWS Certificate Manager (ACM)
 ```init
 ### Request a certificate
 - AWS Certificate Manager > Certificates > Request certificate
@@ -120,7 +136,7 @@ Spin up an RDS instance with:
                                         *.omarleon.online
 ```
 
-4.6. Application Load Balancers & Target Groups
+4.7. Application Load Balancers & Target Groups
 ```init
 ### App Target Group
 - EC2 > Target Groups > Create target group  
@@ -154,7 +170,7 @@ Spin up an RDS instance with:
 
 ```
 
-4.7. Auto Scaling Groups & Launch Templates
+4.8. Auto Scaling Groups & Launch Templates
 ```init
 ### App Launch Template
 - EC2 > Launch templates > Create launch template  
@@ -187,7 +203,7 @@ Note: "app_user_data" script is inside week 6 project folder.
 
 ```
 
-4.8. Route 53
+4.9. Route 53
 ```init
 ### Create a Hosted zone
 - Route 53 > Hosted zones > Create hosted zone
@@ -214,7 +230,7 @@ Note: "app_user_data" script is inside week 6 project folder.
   - Value:            <ALB DNS>
 ```
 
-4.9. S3 Bucket
+4.10. S3 Bucket
 ```init
 Create a Private S3 Bucket and upload index.html
 
@@ -233,7 +249,7 @@ Note: Cloud Front only uses HTTPS and subsequent connections must also use HTTPS
     Browser > Route 53 > (HTTPS) ALB > (port 8000) ASG|EC2 > (port 3306) RDS
 ```
 
-4.10. Cloud Front
+4.11. Cloud Front
 ```init
 Create CloudFront with Origin Access Control (OAC) pointing to S3
 - CloudFront > Distributions > Create distribution
@@ -250,13 +266,13 @@ Note: After linking CloudFront with your S3 Bucket, an AOC Bucket Policy is auto
 Note: If you enable WAF it costs $14 for 10 million requests/month
 ```
 
-4.11. Testing
+4.12. Testing
 Use the Cloud Front 
 ```init
   https://d3auiys4pgyi40.cloudfront.net/index.html
 ```
 
-4.12. Clean Up Resources
+4.13. Clean Up Resources
 ```init
 ### Follow this order to erase resources
 - RDS
